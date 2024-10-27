@@ -1,7 +1,12 @@
 streamlit
+streamlit-webrtc
+googletrans==3.1.0a0
+gTTS==2.2.2
 #ultralytics
 ultralytics==8.0.173
 easyocr
+pytesseract
+opencv-python-headless
 yolov5==7.0.9
 gitpython>=3.1.30
 matplotlib>=3.3
