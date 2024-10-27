@@ -1,6 +1,7 @@
 streamlit
 #ultralytics
 ultralytics==8.0.173
+easyocr==1.7.1
 yolov5==7.0.9
 gitpython>=3.1.30
 matplotlib>=3.3
