@@ -3,17 +3,9 @@ import yolov5
 import streamlit as st
 import numpy as np
 import pandas as pd
-#from ultralytics import YOLO
-
-#import sys
-#sys.path.append('./ultralytics/yolo')
-
-#from utils.checks import check_requirements
-
 
 # load pretrained model
 model = yolov5.load('yolov5s.pt')
-#model = yolov5.load('yolov5nu.pt')
 
 # set model parameters
 model.conf = 0.25  # NMS confidence threshold
@@ -22,48 +14,62 @@ model.agnostic = False  # NMS class-agnostic
 model.multi_label = False  # NMS multiple labels per box
 model.max_det = 1000  # maximum number of detections per image
 
-# take a picture with the camera
 st.title("Detección de Objetos en Imágenes")
 
+# Sidebar para parámetros
 with st.sidebar:
-            st.subheader('Parámetros de Configuración')
-            model.iou= st.slider('Seleccione el IoU',0.0, 1.0)
-            st.write('IOU:', model.iou)
+    st.subheader('Parámetros de Configuración')
+    model.iou = st.slider('Seleccione el IoU', 0.0, 1.0)
+    st.write('IOU:', model.iou)
 
 with st.sidebar:
-            model.conf = st.slider('Seleccione el Confidence',0.0, 1.0)
-            st.write('Conf:', model.conf)
+    model.conf = st.slider('Seleccione el Confidence', 0.0, 1.0)
+    st.write('Conf:', model.conf)
 
+# Crear pestañas para separar las opciones de entrada
+tab1, tab2 = st.tabs(["Cámara", "Subir Archivo"])
 
-picture = st.camera_input("Capturar foto",label_visibility='visible' )
+with tab1:
+    picture = st.camera_input("Capturar foto", label_visibility='visible')
+    if picture:
+        bytes_data = picture.getvalue()
+        cv2_img = cv2.imdecode(np.frombuffer(bytes_data, np.uint8), cv2.IMREAD_COLOR)
+        process_image = True
+    else:
+        process_image = False
 
-if picture:
-    #st.image(picture)
+with tab2:
+    uploaded_file = st.file_uploader("Seleccionar imagen", type=['jpg', 'jpeg', 'png'])
+    if uploaded_file:
+        bytes_data = uploaded_file.getvalue()
+        cv2_img = cv2.imdecode(np.frombuffer(bytes_data, np.uint8), cv2.IMREAD_COLOR)
+        process_image = True
+    else:
+        process_image = False
 
-    bytes_data = picture.getvalue()
-    cv2_img = cv2.imdecode(np.frombuffer(bytes_data, np.uint8), cv2.IMREAD_COLOR)
-  
+# Procesar la imagen si hay una imagen disponible (ya sea de cámara o archivo)
+if process_image:
     # perform inference
     results = model(cv2_img)
-
+    
     # parse results
     predictions = results.pred[0]
     boxes = predictions[:, :4] 
     scores = predictions[:, 4]
     categories = predictions[:, 5]
-
+    
     col1, col2 = st.columns(2)
-
+    
     with col1:
         # show detection bounding boxes on image
         results.render()
         # show image with detections 
-        st.image(cv2_img, channels = 'BGR')
-
+        st.image(cv2_img, channels='BGR')
+    
     with col2:      
-
         # get label names
         label_names = model.names
+        
         # count categories
         category_count = {}
         for category in categories:
@@ -71,13 +77,14 @@ if picture:
                 category_count[category] += 1
             else:
                 category_count[category] = 1        
-
+        
         data = []        
         # print category counts and labels
         for category, count in category_count.items():
             label = label_names[int(category)]            
-            data.append({"Categoría":label,"Cantidad":count})
-        data2 =pd.DataFrame(data)
+            data.append({"Categoría": label, "Cantidad": count})
+        
+        data2 = pd.DataFrame(data)
         
         # agrupar los datos por la columna "categoria" y sumar las cantidades
         df_sum = data2.groupby('Categoría')['Cantidad'].sum().reset_index() 
