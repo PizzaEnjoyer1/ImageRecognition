@@ -70,22 +70,25 @@ if process_image:
         # get label names
         label_names = model.names
         
-        # count categories
-        category_count = {}
-        for category in categories:
-            if category in category_count:
-                category_count[category] += 1
-            else:
-                category_count[category] = 1        
-        
-        data = []        
-        # print category counts and labels
-        for category, count in category_count.items():
-            label = label_names[int(category)]            
-            data.append({"Categoría": label, "Cantidad": count})
-        
-        data2 = pd.DataFrame(data)
-        
-        # agrupar los datos por la columna "categoria" y sumar las cantidades
-        df_sum = data2.groupby('Categoría')['Cantidad'].sum().reset_index() 
-        df_sum
+        if len(categories) > 0:  # Verificar si hay objetos detectados
+            # count categories
+            category_count = {}
+            for category in categories:
+                if category in category_count:
+                    category_count[category] += 1
+                else:
+                    category_count[category] = 1        
+            
+            data = []        
+            # print category counts and labels
+            for category, count in category_count.items():
+                label = label_names[int(category)]            
+                data.append({"Categoría": label, "Cantidad": count})
+            
+            data2 = pd.DataFrame(data)
+            
+            # agrupar los datos por la columna "categoria" y sumar las cantidades
+            df_sum = data2.groupby('Categoría')['Cantidad'].sum().reset_index()
+            st.write(df_sum)
+        else:
+            st.write("No se detectaron objetos en la imagen.")
