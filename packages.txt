@@ -2,3 +2,5 @@ libgl1
 libglib2.0-0
 cmake
 libssl-dev
+tesseract-ocr
+tesseract-ocr-spa
