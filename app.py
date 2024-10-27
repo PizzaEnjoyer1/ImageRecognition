@@ -3,6 +3,14 @@ import yolov5
 import streamlit as st
 import numpy as np
 import pandas as pd
+import easyocr
+
+# Inicializar el lector OCR (solo se hace una vez)
+@st.cache_resource
+def load_ocr():
+    return easyocr.Reader(['es', 'en'])  # Soporta español e inglés
+
+reader = load_ocr()
 
 # load pretrained model
 model = yolov5.load('yolov5s.pt')
@@ -49,7 +57,7 @@ with tab2:
 
 # Procesar la imagen si hay una imagen disponible (ya sea de cámara o archivo)
 if process_image:
-    # perform inference
+    # perform inference for object detection
     results = model(cv2_img)
     
     # parse results
@@ -58,6 +66,7 @@ if process_image:
     scores = predictions[:, 4]
     categories = predictions[:, 5]
     
+    # Crear tres columnas
     col1, col2 = st.columns(2)
     
     with col1:
@@ -89,6 +98,25 @@ if process_image:
             
             # agrupar los datos por la columna "categoria" y sumar las cantidades
             df_sum = data2.groupby('Categoría')['Cantidad'].sum().reset_index()
+            st.write("Objetos detectados:")
             st.write(df_sum)
         else:
             st.write("No se detectaron objetos en la imagen.")
+    
+    # Realizar OCR en la imagen
+    st.subheader("Texto detectado en la imagen:")
+    with st.spinner('Detectando texto...'):
+        results = reader.readtext(cv2_img)
+        
+        if results:
+            # Crear una tabla para mostrar el texto detectado
+            text_data = []
+            for detection in results:
+                text = detection[1]  # El texto detectado
+                conf = detection[2]  # La confianza de la detección
+                text_data.append({"Texto": text, "Confianza": f"{conf:.2%}"})
+            
+            text_df = pd.DataFrame(text_data)
+            st.write(text_df)
+        else:
+            st.write("No se detectó texto en la imagen.")
